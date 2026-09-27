@@ -36,23 +36,22 @@ XML-конфигурационный файл, а также выполнени�
 входит в комплект).
 
 Генерация тестовых VFS-архивов (создаются локально, не хранятся в репозитории):
-\`\`\`
+```
 python tests/make_vfs.py
-\`\`\`
+```
+
+Запуск автотестов:
+```
+python -m unittest discover tests
+```
 
 Запуск эмулятора:
-\`\`\`
+```
 run.bat --vfs tests/generated_vfs/minimal.zip
-\`\`\`
-или напрямую:
-\`\`\`
-python src/main.py --vfs tests/generated_vfs/deep.zip --script scripts/stage5_script.txt
-\`\`\`
-
-Сценарии проверки по этапам — в папке `scripts/` (`test_stage4.bat`, `test_stage5.bat` и т.д.).
+```
 
 ## Примеры использования
-\`\`\`
+```
 $ python src/main.py --vfs tests/generated_vfs/deep.zip
 deep:/> ls
 level1
@@ -65,4 +64,4 @@ deep:/level1/level2/level3> cd ../../..
 deep:/> cp level1/top_file.txt copy.txt
 Скопировано: /level1/top_file.txt -> /copy.txt
 deep:/> exit
-\`\`\`
+```
