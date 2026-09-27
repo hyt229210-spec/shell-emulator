@@ -1,18 +1,25 @@
 """Графический интерфейс эмулятора на Tkinter."""
+import os
 import tkinter as tk
 
 from commands import run_command
 from parser import parse_line
+from vfs import VfsError, load_vfs
 
 
 class EmulatorWindow(tk.Tk):
     """Главное окно эмулятора."""
 
-    def __init__(self, vfs_name, settings=None):
+    def __init__(self, settings=None):
         super().__init__()
-        self.vfs_name = vfs_name
         self.settings = settings or {}
-        self.title(f"Эмулятор — {vfs_name}")
+        self.vfs_tree = {}
+        self.cwd = []  # текущий путь внутри VFS, используется с этапа 4
+
+        vfs_path = self.settings.get("vfs")
+        self.vfs_name = self._vfs_name_from_path(vfs_path)
+
+        self.title(f"Эмулятор — {self.vfs_name}")
         self.geometry("700x450")
 
         self.output = tk.Text(self, state="disabled", bg="black", fg="white")
@@ -23,11 +30,43 @@ class EmulatorWindow(tk.Tk):
         self.entry.bind("<Return>", self.on_enter)
         self.entry.focus()
 
-        self._print(f"Добро пожаловать в эмулятор VFS '{vfs_name}'. Введите команду.")
+        self._print(f"Добро пожаловать в эмулятор VFS '{self.vfs_name}'. Введите команду.")
+        self._load_vfs_if_needed(vfs_path)
 
         script_path = self.settings.get("script")
         if script_path:
             self.after(300, lambda: self.run_script(script_path))
+
+    @staticmethod
+    def _vfs_name_from_path(vfs_path):
+        """Определяет отображаемое имя VFS по пути к архиву."""
+        if not vfs_path:
+            return "нет VFS"
+        base = os.path.basename(vfs_path)
+        name, _ext = os.path.splitext(base)
+        return name or base
+
+    def _load_vfs_if_needed(self, vfs_path):
+        """Загружает VFS из ZIP в память, если путь указан."""
+        if not vfs_path:
+            self._print("VFS не указана: работа без файловой системы.")
+            return
+        try:
+            self.vfs_tree = load_vfs(vfs_path)
+            file_count = self._count_files(self.vfs_tree)
+            self._print(f"VFS загружена в память: {file_count} файл(ов).")
+        except VfsError as error:
+            self._print(str(error))
+
+    def _count_files(self, node):
+        """Считает количество файлов во всём дереве VFS (рекурсивно)."""
+        total = 0
+        for value in node.values():
+            if isinstance(value, dict):
+                total += self._count_files(value)
+            else:
+                total += 1
+        return total
 
     def _print(self, text):
         self.output.configure(state="normal")
