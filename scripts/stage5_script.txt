@@ -1,0 +1,9 @@
+# Демонстрация этапа 5: команда cp
+ls
+cp level1/top_file.txt copy_of_top.txt
+ls
+tail copy_of_top.txt
+cp level1/level2/mid_file.txt level1
+ls level1
+cp nonexistent.txt somewhere.txt
+exit
