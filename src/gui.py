@@ -4,7 +4,7 @@ import tkinter as tk
 
 from commands import run_command
 from parser import parse_line
-from vfs import VfsError, load_vfs
+from vfs import VfsError, load_vfs, read_file as vfs_read_file
 
 
 class EmulatorWindow(tk.Tk):
@@ -14,7 +14,7 @@ class EmulatorWindow(tk.Tk):
         super().__init__()
         self.settings = settings or {}
         self.vfs_tree = {}
-        self.cwd = []  # текущий путь внутри VFS, используется с этапа 4
+        self.cwd = []  # текущий путь внутри VFS (список частей)
 
         vfs_path = self.settings.get("vfs")
         self.vfs_name = self._vfs_name_from_path(vfs_path)
@@ -68,11 +68,24 @@ class EmulatorWindow(tk.Tk):
                 total += 1
         return total
 
+    def read_file(self, path_parts):
+        """Читает содержимое файла VFS по пути (используется командой tail)."""
+        return vfs_read_file(self.vfs_tree, path_parts)
+
+    def clear_output(self):
+        """Полностью очищает окно вывода (используется командой clear)."""
+        self.output.configure(state="normal")
+        self.output.delete("1.0", "end")
+        self.output.configure(state="disabled")
+
     def _print(self, text):
         self.output.configure(state="normal")
         self.output.insert("end", text + "\n")
         self.output.configure(state="disabled")
         self.output.see("end")
+
+    def _prompt(self):
+        return f"{self.vfs_name}:/{'/'.join(self.cwd)}> "
 
     def _execute_line(self, line):
         """Печатает строку ввода и результат её выполнения.
@@ -80,14 +93,16 @@ class EmulatorWindow(tk.Tk):
         Возвращает False, если после этой строки выполнение нужно
         остановить (например, была команда exit).
         """
-        self._print(f"{self.vfs_name}> {line}")
+        self._print(f"{self._prompt()}{line}")
         command, args = parse_line(line)
         if command is None:
             return True
         if command == "exit":
             self.destroy()
             return False
-        self._print(run_command(command, args))
+        result = run_command(command, args, self)
+        if result:
+            self._print(result)
         return True
 
     def on_enter(self, event):

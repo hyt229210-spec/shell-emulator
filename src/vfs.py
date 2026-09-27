@@ -46,3 +46,38 @@ def list_dir(tree, path_parts):
             raise VfsError(f"Каталог не найден: {'/'.join(path_parts)}")
         node = node[part]
     return sorted(node.keys())
+def get_node(tree, path_parts):
+    """Возвращает узел дерева VFS (папку-словарь или файл-строку) по пути."""
+    node = tree
+    for part in path_parts:
+        if not isinstance(node, dict) or part not in node:
+            raise VfsError(f"Путь не найден: /{'/'.join(path_parts)}")
+        node = node[part]
+    return node
+
+
+def resolve_path(cwd, target):
+    """Строит новый путь (список частей) на основе текущего пути и цели.
+
+    Поддерживает абсолютные пути (начинаются с '/'), а также '.' и '..'.
+    """
+    parts = [] if target.startswith("/") else list(cwd)
+
+    for piece in target.split("/"):
+        if piece in ("", "."):
+            continue
+        if piece == "..":
+            if parts:
+                parts.pop()
+            continue
+        parts.append(piece)
+    return parts
+
+
+def read_file(tree, path_parts):
+    """Возвращает декодированное текстовое содержимое файла по пути."""
+    node = get_node(tree, path_parts)
+    if isinstance(node, dict):
+        raise VfsError(f"'{'/'.join(path_parts)}' является каталогом")
+    raw = base64.b64decode(node)
+    return raw.decode("utf-8", errors="replace")
