@@ -1,0 +1,15 @@
+# Демонстрация этапа 4: реальные ls/cd + clear, tail, who
+ls
+cd level1
+ls
+cd level2/level3
+ls
+tail deep_file.txt
+who
+cd ../../..
+ls
+clear
+who
+cd nonexistent
+tail nonexistent.txt
+exit
