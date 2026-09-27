@@ -8,3 +8,4 @@ env/
 .idea/
 *.zip
 .DS_Store
+tests/generated_vfs/
