@@ -81,3 +81,16 @@ def read_file(tree, path_parts):
         raise VfsError(f"'{'/'.join(path_parts)}' является каталогом")
     raw = base64.b64decode(node)
     return raw.decode("utf-8", errors="replace")
+def set_node(tree, path_parts, value):
+    """Помещает значение (файл или каталог) в дерево VFS по указанному пути.
+
+    Работает только в памяти, ничего не пишет на диск. Промежуточные
+    каталоги на пути должны уже существовать.
+    """
+    if not path_parts:
+        raise VfsError("Некорректный путь назначения")
+    *parent_parts, name = path_parts
+    parent = get_node(tree, parent_parts) if parent_parts else tree
+    if not isinstance(parent, dict):
+        raise VfsError(f"'{'/'.join(parent_parts)}' не является каталогом")
+    parent[name] = value

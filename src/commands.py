@@ -1,8 +1,7 @@
 """Команды эмулятора, работающие с виртуальной файловой системой (VFS)."""
 from datetime import datetime
 
-from vfs import VfsError, get_node, resolve_path
-
+from vfs import VfsError, get_node, resolve_path, set_node
 
 def cmd_ls(args, ctx):
     """Выводит содержимое текущего каталога или каталога, указанного в аргументе."""
@@ -48,6 +47,33 @@ def cmd_who(args, ctx):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return f"user   emulator   {now}   vfs={ctx.vfs_name}"
 
+def cmd_cp(args, ctx):
+    """Копирует файл внутри VFS в другое место (только в памяти).
+
+    Если назначение — существующий каталог, файл копируется в него
+    под тем же именем. Иначе назначение считается полным путём файла.
+    """
+    if len(args) < 2:
+        raise VfsError("cp: нужно указать источник и назначение")
+
+    src_path = resolve_path(ctx.cwd, args[0])
+    dst_path = resolve_path(ctx.cwd, args[1])
+
+    src_node = get_node(ctx.vfs_tree, src_path)
+    if isinstance(src_node, dict):
+        raise VfsError(f"'{args[0]}' является каталогом, cp поддерживает только файлы")
+
+    try:
+        dst_node = get_node(ctx.vfs_tree, dst_path)
+        destination_is_dir = isinstance(dst_node, dict)
+    except VfsError:
+        destination_is_dir = False
+
+    if destination_is_dir:
+        dst_path = dst_path + [src_path[-1]]
+
+    set_node(ctx.vfs_tree, dst_path, src_node)
+    return f"Скопировано: /{'/'.join(src_path)} -> /{'/'.join(dst_path)}"
 
 COMMANDS = {
     "ls": cmd_ls,
@@ -55,6 +81,7 @@ COMMANDS = {
     "clear": cmd_clear,
     "tail": cmd_tail,
     "who": cmd_who,
+    "cp": cmd_cp,
 }
 
 
